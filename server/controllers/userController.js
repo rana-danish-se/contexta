@@ -1,6 +1,13 @@
 import User from '../models/User.js';
-import { generateTokens, setTokenCookies, clearTokenCookies } from '../utils/jwt.js';
-import { sendVerificationOTP, sendPasswordResetEmail } from '../services/emailService.js';
+import {
+  generateTokens,
+  setTokenCookies,
+  clearTokenCookies,
+} from '../utils/jwt.js';
+import {
+  sendVerificationOTP,
+  sendPasswordResetEmail,
+} from '../services/emailService.js';
 import crypto from 'crypto';
 
 // @desc    Register user
@@ -15,7 +22,7 @@ const signup = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this email'
+        message: 'User already exists with this email',
       });
     }
 
@@ -23,7 +30,7 @@ const signup = async (req, res) => {
     const user = new User({
       name,
       email,
-      password
+      password,
     });
 
     // Generate OTP
@@ -35,20 +42,20 @@ const signup = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful! Please check your email for verification code.',
+      message:
+        'Registration successful! Please check your email for verification code.',
       data: {
         userId: user._id,
         email: user.email,
         name: user.name,
-        isVerified: user.isVerified
-      }
+        isVerified: user.isVerified,
+      },
     });
-
   } catch (error) {
     console.error('Signup error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error creating user account'
+      message: 'Error creating user account',
     });
   }
 };
@@ -61,32 +68,32 @@ const verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
 
     const user = await User.findOne({ email }).select('+otp +otpExpiry');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     if (user.isVerified) {
       return res.status(400).json({
         success: false,
-        message: 'User is already verified'
-      });
-    }
-
-    if (!user.otp || user.otp !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid OTP'
+        message: 'User is already verified',
       });
     }
 
     if (user.otpExpiry < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'OTP has expired'
+        message: 'OTP has expired',
+      });
+    }
+
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP',
       });
     }
 
@@ -97,7 +104,7 @@ const verifyOTP = async (req, res) => {
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user);
     user.refreshToken = refreshToken;
-    
+
     await user.save();
 
     // Set cookies
@@ -111,16 +118,15 @@ const verifyOTP = async (req, res) => {
           id: user._id,
           name: user.name,
           email: user.email,
-          isVerified: user.isVerified
-        }
-      }
+          isVerified: user.isVerified,
+        },
+      },
     });
-
   } catch (error) {
     console.error('OTP verification error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error verifying OTP'
+      message: 'Error verifying OTP',
     });
   }
 };
@@ -133,18 +139,18 @@ const resendOTP = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     if (user.isVerified) {
       return res.status(400).json({
         success: false,
-        message: 'User is already verified'
+        message: 'User is already verified',
       });
     }
 
@@ -157,14 +163,13 @@ const resendOTP = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'New OTP sent to your email'
+      message: 'New OTP sent to your email',
     });
-
   } catch (error) {
     console.error('Resend OTP error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error sending OTP'
+      message: 'Error sending OTP',
     });
   }
 };
@@ -178,11 +183,11 @@ const login = async (req, res) => {
 
     // Find user and include password
     const user = await User.findOne({ email }).select('+password');
-    
+
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid credentials',
       });
     }
 
@@ -197,7 +202,7 @@ const login = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: 'Please verify your email. A new OTP has been sent.',
-        requiresVerification: true
+        requiresVerification: true,
       });
     }
 
@@ -217,16 +222,15 @@ const login = async (req, res) => {
           id: user._id,
           name: user.name,
           email: user.email,
-          isVerified: user.isVerified
-        }
-      }
+          isVerified: user.isVerified,
+        },
+      },
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error logging in'
+      message: 'Error logging in',
     });
   }
 };
@@ -238,7 +242,7 @@ const logout = async (req, res) => {
   try {
     // Clear refresh token from database
     await User.findByIdAndUpdate(req.user._id, {
-      $unset: { refreshToken: 1 }
+      $unset: { refreshToken: 1 },
     });
 
     // Clear cookies
@@ -246,14 +250,13 @@ const logout = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Logged out successfully'
+      message: 'Logged out successfully',
     });
-
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error logging out'
+      message: 'Error logging out',
     });
   }
 };
@@ -266,11 +269,11 @@ const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found with this email'
+        message: 'User not found with this email',
       });
     }
 
@@ -283,14 +286,13 @@ const forgotPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Password reset link sent to your email'
+      message: 'Password reset link sent to your email',
     });
-
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error sending reset email'
+      message: 'Error sending reset email',
     });
   }
 };
@@ -307,13 +309,13 @@ const resetPassword = async (req, res) => {
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
-      resetPasswordExpiry: { $gt: Date.now() }
+      resetPasswordExpiry: { $gt: Date.now() },
     }).select('+resetPasswordToken +resetPasswordExpiry');
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token'
+        message: 'Invalid or expired reset token',
       });
     }
 
@@ -324,14 +326,13 @@ const resetPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Password reset successfully'
+      message: 'Password reset successfully',
     });
-
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error resetting password'
+      message: 'Error resetting password',
     });
   }
 };
@@ -351,16 +352,15 @@ const getMe = async (req, res) => {
           name: user.name,
           email: user.email,
           isVerified: user.isVerified,
-          createdAt: user.createdAt
-        }
-      }
+          createdAt: user.createdAt,
+        },
+      },
     });
-
   } catch (error) {
     console.error('Get me error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching user data'
+      message: 'Error fetching user data',
     });
   }
 };
@@ -373,5 +373,5 @@ export {
   logout,
   forgotPassword,
   resetPassword,
-  getMe
+  getMe,
 };

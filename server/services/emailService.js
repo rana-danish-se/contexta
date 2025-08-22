@@ -1,21 +1,19 @@
-import nodemailer from 'nodemailer'
+import nodemailer from 'nodemailer';
+import dotenv from "dotenv";
+dotenv.config();
 
 // Create transporter
-const createTransporter = () => {
-  return nodemailer.createTransporter({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-};
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const sendVerificationOTP = async (email, name, otp) => {
-  const transporter = createTransporter();
-
   const mailOptions = {
     from: `"Contexta" <${process.env.EMAIL_FROM}>`,
     to: email,
@@ -59,14 +57,13 @@ const sendVerificationOTP = async (email, name, otp) => {
         </div>
       </body>
       </html>
-    `
+    `,
   };
 
   await transporter.sendMail(mailOptions);
 };
 
 const sendPasswordResetEmail = async (email, name, resetToken) => {
-  const transporter = createTransporter();
   const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
   const mailOptions = {
@@ -112,13 +109,10 @@ const sendPasswordResetEmail = async (email, name, resetToken) => {
         </div>
       </body>
       </html>
-    `
+    `,
   };
 
   await transporter.sendMail(mailOptions);
 };
 
-export {
-  sendVerificationOTP,
-  sendPasswordResetEmail
-};
+export { sendVerificationOTP, sendPasswordResetEmail };

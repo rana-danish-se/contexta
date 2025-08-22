@@ -7,7 +7,7 @@ const connectDB = async () => {
       useUnifiedTopology: true,
     });
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    console.log(`✅ MongoDB Connected: ${conn.connection.name} at host ${conn.connection.host}`);
 
     mongoose.connection.on('disconnected', () => {
       console.log('❌ MongoDB disconnected');
@@ -16,6 +16,7 @@ const connectDB = async () => {
     mongoose.connection.on('error', (err) => {
       console.error('❌ MongoDB connection error:', err);
     });
+
     process.on('SIGINT', async () => {
       try {
         await mongoose.connection.close();
